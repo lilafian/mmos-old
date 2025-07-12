@@ -11,6 +11,8 @@ uint64_t reserved_memory;
 uint64_t used_memory;
 bool initialized = false;
 
+PAGE_FRAME_ALLOCATOR global_allocator;
+
 void pfallocator_read_efi_memory_map(PAGE_FRAME_ALLOCATOR* allocator, EFI_MEMORY_MAP_INFO memory_map_info) {
     if (initialized) return;
     initialized = true;

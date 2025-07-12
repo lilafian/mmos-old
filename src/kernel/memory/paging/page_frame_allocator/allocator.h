@@ -7,9 +7,9 @@
 #pragma once
 
 #include <stdint.h>
-#include "../efi_map/efi_map.h"
-#include "../bitmap.h"
-#include "../memory.h"
+#include "../../efi_map/efi_map.h"
+#include "../../bitmap.h"
+#include "../../memory.h"
 
 typedef struct {
     BITMAP page_bitmap;
@@ -33,3 +33,5 @@ void* pfallocator_request_page(PAGE_FRAME_ALLOCATOR* allocator);
 uint64_t get_free_memory();
 uint64_t get_used_memory();
 uint64_t get_reserved_memory();
+
+extern PAGE_FRAME_ALLOCATOR global_allocator;
