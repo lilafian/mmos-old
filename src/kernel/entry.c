@@ -76,13 +76,5 @@ void mmk_entry(FRAMEBUFFER* framebuffer, PSF_FONT* font, EFI_MEMORY_MAP_INFO mem
     asm ("mov %0, %%cr3" :: "r" (pml4));
     klogf("Page tables loaded!\n");
 
-    heap_init((void*)0x0000100000000000, 0x10);
-    void* addr = malloc(0x8000);
-    klogf("%p\n", addr);
-    klogf("%p\n", malloc(0x8000));
-    klogf("%p\n", malloc(0x8000));
-    free(addr);
-    klogf("%p\n", malloc(0x100));
-
     halt();
 }
