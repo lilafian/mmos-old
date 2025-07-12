@@ -16,4 +16,4 @@ typedef struct {
 } BITMAP;
 
 bool bitmap_get(BITMAP* bitmap, uint64_t index);
-void bitmap_set(BITMAP* bitmap, uint64_t index, bool value);
+bool bitmap_set(BITMAP* bitmap, uint64_t index, bool value);

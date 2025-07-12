@@ -32,7 +32,7 @@ void mmk_entry(FRAMEBUFFER* framebuffer, PSF_FONT* font, EFI_MEMORY_MAP_INFO mem
     boutcon_init(&con, framebuffer, font, 0xFFDDDDDD, 0x00000000);
     klog_init(KERNEL_LOG_MODE_CON_DISPLAYED, &con);
 
-    klogf("Modern Minimal Operating System version %s\n", MMK_VERSION);
+    klogf("Modern Minimal Kernel version %s\n", MMK_VERSION);
     klogf("Total detected memory size: %d MiB\n", get_memory_size(memory_map_info) / 0x100000);
     
     klogf("Reading EFI memory map and allocating free memory...\n");
@@ -42,6 +42,10 @@ void mmk_entry(FRAMEBUFFER* framebuffer, PSF_FONT* font, EFI_MEMORY_MAP_INFO mem
     uint64_t kernel_size = (uint64_t)&_MMK_END_ADDRESS - (uint64_t)&_MMK_START_ADDRESS;
     uint64_t kernel_pages = kernel_size / 4096;
     pfallocator_lock_pages(&global_allocator, &_MMK_START_ADDRESS, kernel_pages);
+
+    uint64_t framebuffer_base = (uint64_t)framebuffer->base_address;
+    uint64_t framebuffer_size = (uint64_t)framebuffer->size + 0x1000;
+    pfallocator_lock_pages(&global_allocator, (void*)framebuffer_base, framebuffer_size / 4096);
 
     klogf("Map read and system memory reserved!\nFree memory: %d KB\nUsed memory: %d KB\nReserved memory %d KB\n", get_free_memory() / 1024, get_used_memory() / 1024, get_reserved_memory() / 1024);
 
@@ -63,8 +67,6 @@ void mmk_entry(FRAMEBUFFER* framebuffer, PSF_FONT* font, EFI_MEMORY_MAP_INFO mem
     }
 
     klogf("Mapping framebuffer...\n");
-    uint64_t framebuffer_base = (uint64_t)framebuffer->base_address;
-    uint64_t framebuffer_size = (uint64_t)framebuffer->size + 0x1000;
 
     for (uint64_t i = framebuffer_base; i < framebuffer_base + framebuffer_size; i += 4096) {
         ptmanager_map_memory(&pt_manager, (void*)i, (void*)i);

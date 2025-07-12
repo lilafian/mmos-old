@@ -7,6 +7,7 @@
 #include "bitmap.h"
 
 bool bitmap_get(BITMAP* bitmap, uint64_t index) {
+    if (index > bitmap->size * 8) return false;
     uint64_t byte_index = index / 8;
     uint8_t bit_index = index % 8;
     uint8_t bit_mask = 0b10000000 >> bit_index;
@@ -16,7 +17,8 @@ bool bitmap_get(BITMAP* bitmap, uint64_t index) {
     return false;
 }
 
-void bitmap_set(BITMAP* bitmap, uint64_t index, bool value) {
+bool bitmap_set(BITMAP* bitmap, uint64_t index, bool value) {
+    if (index > bitmap->size * 8) return false;
     uint64_t byte_index = index / 8;
     uint8_t bit_index = index % 8;
     uint8_t bit_mask = 0b10000000 >> bit_index;
@@ -25,4 +27,5 @@ void bitmap_set(BITMAP* bitmap, uint64_t index, bool value) {
     if (value) {
         bitmap->buffer[byte_index] |= bit_mask;
     }
+    return true;
 }

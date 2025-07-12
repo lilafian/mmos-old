@@ -56,9 +56,10 @@ void __pfallocator_initialize_bitmap(PAGE_FRAME_ALLOCATOR* allocator, size_t bit
 void pfallocator_free_page(PAGE_FRAME_ALLOCATOR* allocator, void* address) {
     uint64_t index = (uint64_t)address / 4096;
     if (bitmap_get(&allocator->page_bitmap, index) == false) return;
-    bitmap_set(&allocator->page_bitmap, index, false);
-    free_memory += 4096;
-    used_memory -= 4096;
+    if (bitmap_set(&allocator->page_bitmap, index, false)) {
+        free_memory += 4096;
+        used_memory -= 4096;
+    };
 }
 
 void pfallocator_free_pages(PAGE_FRAME_ALLOCATOR* allocator, void* address, uint64_t page_count) {
@@ -70,9 +71,10 @@ void pfallocator_free_pages(PAGE_FRAME_ALLOCATOR* allocator, void* address, uint
 void pfallocator_lock_page(PAGE_FRAME_ALLOCATOR* allocator, void* address) {
     uint64_t index = (uint64_t)address / 4096;
     if (bitmap_get(&allocator->page_bitmap, index) == true) return;
-    bitmap_set(&allocator->page_bitmap, index, true);
-    free_memory -= 4096;
-    used_memory += 4096;
+    if (bitmap_set(&allocator->page_bitmap, index, true)) {
+        free_memory -= 4096;
+        used_memory += 4096;
+    }
 }
 
 void pfallocator_lock_pages(PAGE_FRAME_ALLOCATOR* allocator, void* address, uint64_t page_count) {
@@ -84,9 +86,10 @@ void pfallocator_lock_pages(PAGE_FRAME_ALLOCATOR* allocator, void* address, uint
 void __pfallocator_reserve_page(PAGE_FRAME_ALLOCATOR* allocator, void* address) {
     uint64_t index = (uint64_t)address / 4096;
     if (bitmap_get(&allocator->page_bitmap, index) == true) return;
-    bitmap_set(&allocator->page_bitmap, index, true);
-    free_memory -= 4096;
-    reserved_memory += 4096;
+    if (bitmap_set(&allocator->page_bitmap, index, true)) {
+        free_memory -= 4096;
+        reserved_memory += 4096;
+    }
 }
 
 void __pfallocator_reserve_pages(PAGE_FRAME_ALLOCATOR* allocator, void* address, uint64_t page_count) {
@@ -98,9 +101,10 @@ void __pfallocator_reserve_pages(PAGE_FRAME_ALLOCATOR* allocator, void* address,
 void __pfallocator_release_page(PAGE_FRAME_ALLOCATOR* allocator, void* address) {
     uint64_t index = (uint64_t)address / 4096;
     if (bitmap_get(&allocator->page_bitmap, index) == false) return;
-    bitmap_set(&allocator->page_bitmap, index, false);
-    free_memory += 4096;
-    reserved_memory -= 4096;
+    if (bitmap_set(&allocator->page_bitmap, index, false)) {
+        free_memory += 4096;
+        reserved_memory -= 4096;
+    }
 }
 
 void __pfallocator_release_pages(PAGE_FRAME_ALLOCATOR* allocator, void* address, uint64_t page_count) {
