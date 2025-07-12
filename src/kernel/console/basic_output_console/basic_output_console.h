@@ -9,8 +9,9 @@
 #include "../../graphics/gop_framebuffer/framebuffer.h"
 #include "../../graphics/fonts/psf/psf.h"
 
+#define BOUTCON_OUTBUFFER_SIZE 4096
 typedef struct {
-    char output_buffer[4096];
+    char output_buffer[BOUTCON_OUTBUFFER_SIZE];
     FRAMEBUFFER* framebuffer;
     PSF_FONT* font;
     COLOR32 foreground_color;

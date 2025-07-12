@@ -29,11 +29,15 @@ void fb_psf_draw_character(FRAMEBUFFER* framebuffer, PSF_FONT* font, char charac
 }
 
 void fb_psf_draw_string(FRAMEBUFFER* framebuffer, PSF_FONT* font, char* string, int x, int y, COLOR32 foreground, COLOR32 background) {
+    int cursor_x = x;
+    int cursor_y = y;
     for (int i = 0; i < strlen(string); i++) {
         if (string[i] == '\n') {
-            y += font->header->height;
+            cursor_x = x;
+            cursor_y += font->header->height;
             continue;
         }
-        fb_psf_draw_character(framebuffer, font, string[i], i * font->header->width + x, y, foreground, background);
+        fb_psf_draw_character(framebuffer, font, string[i], cursor_x, cursor_y, foreground, background);
+        cursor_x += font->header->width;
     }
 }

@@ -113,12 +113,45 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable
     Print(L"Width: %d\n", framebuffer->width);
     Print(L"Height: %d\n", framebuffer->height);
     Print(L"Pixels per scan line: %d\n", framebuffer->pixels_per_scanline);
+
+    Print(L"Obtaining memory map...\n");
+    EFI_MEMORY_DESCRIPTOR* memory_map = NULL;
+    UINTN memory_map_size = 0;
+    UINTN memory_map_key;
+    UINTN memory_map_descriptor_size;
+    UINT32 memory_map_descriptor_version; {
+        EFI_STATUS status = uefi_call_wrapper(SystemTable->BootServices->GetMemoryMap, 5, &memory_map_size, memory_map, &memory_map_key, &memory_map_descriptor_size, &memory_map_descriptor_version);
+        if (status != EFI_BUFFER_TOO_SMALL) {
+            Print(L"Unexpected error occurred in call to GetMemoryMap (first call): %r\n", status);
+            fail_load(L"\n");
+        }
+        memory_map_size += 2 * memory_map_descriptor_size;
+        status = uefi_call_wrapper(SystemTable->BootServices->AllocatePool, 3, EfiLoaderData, memory_map_size, (void**)&memory_map);
+        if (EFI_ERROR(status)) {
+            Print(L"Error occurred in call to AllocatePool while getting memory map information: %r\n", status);
+            fail_load(L"\n");
+        }
+        status = uefi_call_wrapper(SystemTable->BootServices->GetMemoryMap, 5, &memory_map_size, memory_map, &memory_map_key, &memory_map_descriptor_size, &memory_map_descriptor_version);
+        if (EFI_ERROR(status)) {
+            Print(L"Error occurred in call to GetMemoryMap (second call): %r\n", status);
+            fail_load(L"\n");
+        }
+    }
+
+    EFI_MEMORY_MAP_INFO memory_map_info;
+    memory_map_info.map = memory_map;
+    memory_map_info.size = memory_map_size;
+    memory_map_info.descriptor_size = memory_map_descriptor_size;
+
+    void (*mmk_entry)(FRAMEBUFFER*, PSF_FONT*, EFI_MEMORY_MAP_INFO) = ((__attribute__((sysv_abi)) void (*)(FRAMEBUFFER*, PSF_FONT*, EFI_MEMORY_MAP_INFO) ) kernel_header.e_entry);
+
+    Print(L"Exiting boot services...\n");
+    uefi_call_wrapper(SystemTable->BootServices->ExitBootServices, 2, ImageHandle, memory_map_key);
+
     Print(L"Transferring control to kernel...\n");
-
-    void (*mmk_entry)(FRAMEBUFFER*, PSF_FONT*) = ((__attribute__((sysv_abi)) void (*)(FRAMEBUFFER*, PSF_FONT*) ) kernel_header.e_entry);
-
-    Print(L"Goodbye! (hopefully)");
-    mmk_entry(framebuffer, font);
+    Print(L"Goodbye! (hopefully)\n");
+    mmk_entry(framebuffer, font, memory_map_info);
+    while(1);
 
     return EFI_SUCCESS;
 }

@@ -30,6 +30,12 @@ override KERNEL_OBJ := $(addprefix obj/kernel/,$(KERNEL_SRC_C:.c=.o))
 
 all: bootloader kernel bootimg
 
+prepare: clean copy-ovmf make-gnuefi
+
+make-gnuefi:
+	cd gnu-efi
+	make
+
 clean:
 	rm -rf $(BUILD_DIR) obj
 

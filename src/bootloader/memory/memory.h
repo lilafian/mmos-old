@@ -7,5 +7,12 @@
 #pragma once
 
 #include <stddef.h>
+#include <efi/efi.h>
+
+typedef struct {
+    EFI_MEMORY_DESCRIPTOR* map;
+    UINTN size;
+    UINTN descriptor_size;
+} EFI_MEMORY_MAP_INFO;
 
 int memcmp(const void* a_ptr, const void* b_ptr, size_t n);

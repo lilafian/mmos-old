@@ -7,8 +7,10 @@
 #include "basic_output_console.h"
 #include "../../misc/string/string.h"
 #include "../../graphics/fonts/psf/psf.h"
+#include "../../memory/memory.h"
 
 BASIC_OUTPUT_CONSOLE* boutcon_init(BASIC_OUTPUT_CONSOLE* console, FRAMEBUFFER* framebuffer, PSF_FONT* font, COLOR32 foreground_color, COLOR32 background_color) {
+    memset(console->output_buffer, 0, BOUTCON_OUTBUFFER_SIZE);
     console->framebuffer = framebuffer;
     console->font = font;
     console->foreground_color = foreground_color;
@@ -29,6 +31,5 @@ void boutcon_write(BASIC_OUTPUT_CONSOLE* console, char* message) {
 }
 
 void boutcon_display(BASIC_OUTPUT_CONSOLE* console) {
-    fb_clear(console->framebuffer, 0x00000000);
     fb_psf_draw_string(console->framebuffer, console->font, console->output_buffer, 0, 0, console->foreground_color, console->background_color);
 }

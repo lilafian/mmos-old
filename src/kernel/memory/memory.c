@@ -56,3 +56,19 @@ int memcmp(const void *s1, const void *s2, size_t n) {
 
     return 0;
 }
+
+uint64_t get_memory_size(EFI_MEMORY_MAP_INFO memory_map_info) {
+    // we only need to calculate it once
+    static uint64_t memory_size_bytes = 0;
+    if (memory_size_bytes != 0) return memory_size_bytes;
+
+    uint64_t entry_count = memory_map_info.size / memory_map_info.descriptor_size;
+    for (int i = 0; i < entry_count; i++) {
+        EFI_MEMORY_DESCRIPTOR* descriptor = (EFI_MEMORY_DESCRIPTOR*)((uint8_t*)memory_map_info.map + (i * memory_map_info.descriptor_size));
+        if (descriptor->type != EFI_RESERVED_MEMORY_TYPE && descriptor->type != EFI_MEMORY_MAPPED_IO) {
+            memory_size_bytes += descriptor->page_count * 4096;
+        }
+    }
+
+    return memory_size_bytes;
+}
