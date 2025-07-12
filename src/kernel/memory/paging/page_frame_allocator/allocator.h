@@ -34,4 +34,4 @@ uint64_t get_free_memory();
 uint64_t get_used_memory();
 uint64_t get_reserved_memory();
 
-extern PAGE_FRAME_ALLOCATOR global_allocator;
+extern PAGE_FRAME_ALLOCATOR* global_allocator;

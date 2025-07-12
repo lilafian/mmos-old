@@ -15,6 +15,7 @@
 #include "memory/paging/page_frame_allocator/allocator.h"
 #include "memory/paging/paging.h"
 #include "memory/paging/table_manager/pt_manager.h"
+#include "memory/heap.h"
 
 void halt() {
     while(1) {
@@ -36,45 +37,52 @@ void mmk_entry(FRAMEBUFFER* framebuffer, PSF_FONT* font, EFI_MEMORY_MAP_INFO mem
     klogf("Total detected memory size: %d MiB\n", get_memory_size(memory_map_info) / 0x100000);
     
     klogf("Reading EFI memory map and allocating free memory...\n");
-    pfallocator_read_efi_memory_map(&global_allocator, memory_map_info);
+    pfallocator_read_efi_memory_map(global_allocator, memory_map_info);
 
     klogf("Ensuring kernel pages are locked/reserved...\n");
     uint64_t kernel_size = (uint64_t)&_MMK_END_ADDRESS - (uint64_t)&_MMK_START_ADDRESS;
     uint64_t kernel_pages = kernel_size / 4096;
-    pfallocator_lock_pages(&global_allocator, &_MMK_START_ADDRESS, kernel_pages);
+    pfallocator_lock_pages(global_allocator, &_MMK_START_ADDRESS, kernel_pages);
 
     uint64_t framebuffer_base = (uint64_t)framebuffer->base_address;
     uint64_t framebuffer_size = (uint64_t)framebuffer->size + 0x1000;
-    pfallocator_lock_pages(&global_allocator, (void*)framebuffer_base, framebuffer_size / 4096);
+    pfallocator_lock_pages(global_allocator, (void*)framebuffer_base, framebuffer_size / 4096);
 
     klogf("Map read and system memory reserved!\nFree memory: %d KB\nUsed memory: %d KB\nReserved memory %d KB\n", get_free_memory() / 1024, get_used_memory() / 1024, get_reserved_memory() / 1024);
 
     klogf("Setting up new page tables...\n");
-    PAGE_TABLE* pml4 = (PAGE_TABLE*)pfallocator_request_page(&global_allocator);
+    PAGE_TABLE* pml4 = (PAGE_TABLE*)pfallocator_request_page(global_allocator);
     memset(pml4, 0, 4096);
 
-    PAGE_TABLE_MANAGER pt_manager;
-    ptmanager_init(&pt_manager, pml4);
+    ptmanager_init(global_pt_manager, pml4);
 
     klogf("Mapping full memory range...\n");
     for (uint64_t i = 0; i < get_memory_size(memory_map_info); i += 4096) {
-        ptmanager_map_memory(&pt_manager, (void*)i, (void*)i);
+        ptmanager_map_memory(global_pt_manager, (void*)i, (void*)i);
     }
 
     klogf("Mapping kernel...\n");
     for (uint64_t i = (uint64_t)&_MMK_START_ADDRESS; i < (uint64_t)&_MMK_END_ADDRESS; i += 4096) {
-        ptmanager_map_memory(&pt_manager, (void*)i, (void*)i);
+        ptmanager_map_memory(global_pt_manager, (void*)i, (void*)i);
     }
 
     klogf("Mapping framebuffer...\n");
 
     for (uint64_t i = framebuffer_base; i < framebuffer_base + framebuffer_size; i += 4096) {
-        ptmanager_map_memory(&pt_manager, (void*)i, (void*)i);
+        ptmanager_map_memory(global_pt_manager, (void*)i, (void*)i);
     }
 
     klogf("Loading new page tables...\n");
     asm ("mov %0, %%cr3" :: "r" (pml4));
     klogf("Page tables loaded!\n");
+
+    heap_init((void*)0x0000100000000000, 0x10);
+    void* addr = malloc(0x8000);
+    klogf("%p\n", addr);
+    klogf("%p\n", malloc(0x8000));
+    klogf("%p\n", malloc(0x8000));
+    free(addr);
+    klogf("%p\n", malloc(0x100));
 
     halt();
 }

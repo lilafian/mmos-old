@@ -10,6 +10,8 @@
 #include "../page_frame_allocator/allocator.h"
 #include "../../memory.h"
 
+PAGE_TABLE_MANAGER* global_pt_manager;
+
 void ptmanager_init(PAGE_TABLE_MANAGER* manager, PAGE_TABLE* pml4_address) {
     manager->pml4 = pml4_address;
 }
@@ -21,7 +23,7 @@ void ptmanager_map_memory(PAGE_TABLE_MANAGER* manager, void* virtual_address, vo
     PAGE_DIRECTORY_ENTRY pml4e = manager->pml4->entries[indexer.pdp_index];
     PAGE_TABLE* pdp;
     if (!(pml4e & PAGE_PRESENT)) {
-        pdp = (PAGE_TABLE*)pfallocator_request_page(&global_allocator);
+        pdp = (PAGE_TABLE*)pfallocator_request_page(global_allocator);
         memset(pdp, 0, 4096);
         manager->pml4->entries[indexer.pdp_index] =
             ((uint64_t)pdp & PAGE_ADDR_MASK) | PAGE_PRESENT | PAGE_RW;
@@ -32,7 +34,7 @@ void ptmanager_map_memory(PAGE_TABLE_MANAGER* manager, void* virtual_address, vo
     PAGE_DIRECTORY_ENTRY pdpe = pdp->entries[indexer.pd_index];
     PAGE_TABLE* pd;
     if (!(pdpe & PAGE_PRESENT)) {
-        pd = (PAGE_TABLE*)pfallocator_request_page(&global_allocator);
+        pd = (PAGE_TABLE*)pfallocator_request_page(global_allocator);
         memset(pd, 0, 4096);
         pdp->entries[indexer.pd_index] =
             ((uint64_t)pd & PAGE_ADDR_MASK) | PAGE_PRESENT | PAGE_RW;
@@ -43,7 +45,7 @@ void ptmanager_map_memory(PAGE_TABLE_MANAGER* manager, void* virtual_address, vo
     PAGE_DIRECTORY_ENTRY pde = pd->entries[indexer.pt_index];
     PAGE_TABLE* pt;
     if (!(pde & PAGE_PRESENT)) {
-        pt = (PAGE_TABLE*)pfallocator_request_page(&global_allocator);
+        pt = (PAGE_TABLE*)pfallocator_request_page(global_allocator);
         memset(pt, 0, 4096);
         pd->entries[indexer.pt_index] =
             ((uint64_t)pt & PAGE_ADDR_MASK) | PAGE_PRESENT | PAGE_RW;
