@@ -12,6 +12,7 @@
 #include "misc/klog/klog.h"
 #include "memory/memory.h"
 #include "memory/bitmap.h"
+#include "memory/page_frame_allocator/allocator.h"
 
 void halt() {
     while(1) {
@@ -19,15 +20,29 @@ void halt() {
     }
 }
 
+extern uint64_t _MMK_START_ADDRESS;
+extern uint64_t _MMK_END_ADDRESS;
+
 void mmk_entry(FRAMEBUFFER* framebuffer, PSF_FONT* font, EFI_MEMORY_MAP_INFO memory_map_info) {
     fb_clear(framebuffer, 0x00000000);
     
     BASIC_OUTPUT_CONSOLE con;
-    boutcon_init(&con, framebuffer, font, 0xFFFFFFFF, 0x00000000);
+    boutcon_init(&con, framebuffer, font, 0xFFDDDDDD, 0x00000000);
     klog_init(KERNEL_LOG_MODE_CON_DISPLAYED, &con);
 
     klogf("Modern Minimal Operating System version %s\n", MMK_VERSION);
-    klogf("Total memory size: %d MiB\n", get_memory_size(memory_map_info) / 0x100000); 
+    klogf("Total detected memory size: %d MiB\n", get_memory_size(memory_map_info) / 0x100000);
+    
+    klogf("Reading EFI memory map and allocating free memory...\n");
+    PAGE_FRAME_ALLOCATOR allocator;
+    pfallocator_read_efi_memory_map(&allocator, memory_map_info);
+
+    klogf("Ensuring kernel pages are locked/reserved...\n");
+    uint64_t kernel_size = (uint64_t)&_MMK_END_ADDRESS - (uint64_t)&_MMK_START_ADDRESS;
+    uint64_t kernel_pages = kernel_size / 4096;
+    pfallocator_lock_pages(&allocator, &_MMK_START_ADDRESS, kernel_pages);
+
+    klogf("Map read and system memory reserved!\nFree memory: %d KB\nUsed memory: %d KB\nReserved memory %d KB\n", get_free_memory() / 1024, get_used_memory() / 1024, get_reserved_memory() / 1024);
 
     halt();
 }

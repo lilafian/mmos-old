@@ -3,6 +3,8 @@ ENTRY(mmk_entry)
 
 SECTIONS
 {
+    _MMK_START_ADDRESS = .;
+
 	.text : ALIGN(0x1000)
 	{
 		*(.text)
@@ -20,4 +22,6 @@ SECTIONS
 		*(COMMON)
 		*(.bss)
 	}
+    
+    _MMK_END_ADDRESS = .;
 }
