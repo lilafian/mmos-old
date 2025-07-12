@@ -15,7 +15,6 @@
 #include "memory/paging/page_frame_allocator/allocator.h"
 #include "memory/paging/paging.h"
 #include "memory/paging/table_manager/pt_manager.h"
-#include "memory/heap.h"
 
 void halt() {
     while(1) {
