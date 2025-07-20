@@ -33,8 +33,7 @@ all: bootloader kernel bootimg
 prepare: clean copy-ovmf make-gnuefi
 
 make-gnuefi:
-	cd gnu-efi
-	make
+	make -C gnu-efi
 
 clean:
 	rm -rf $(BUILD_DIR) obj
