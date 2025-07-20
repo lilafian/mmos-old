@@ -95,6 +95,8 @@ void heapseg_combine_forward(HEAP_SEGMENT_HEADER* segment) {
         segment->next->next->last = segment;
     }
 
+    segment->next = segment->next->next;
+
     segment->length = segment->length = segment->next->length + sizeof(HEAP_SEGMENT_HEADER);
 }
 
