@@ -13,6 +13,7 @@
 #include "graphics/gop/gop.h"
 #include "graphics/gop/framebuffer.h"
 #include "graphics/fonts/psf.h"
+#include "string.h"
 
 void fail_load(CHAR16* message) {
     Print(L"Load failed: %s", message);
@@ -143,14 +144,31 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable
     memory_map_info.size = memory_map_size;
     memory_map_info.descriptor_size = memory_map_descriptor_size;
 
-    void (*mmk_entry)(FRAMEBUFFER*, PSF_FONT*, EFI_MEMORY_MAP_INFO) = ((__attribute__((sysv_abi)) void (*)(FRAMEBUFFER*, PSF_FONT*, EFI_MEMORY_MAP_INFO) ) kernel_header.e_entry);
+    void* rsdp = NULL;
+    EFI_CONFIGURATION_TABLE* config_table = SystemTable->ConfigurationTable;
+    EFI_GUID acpi2_table_guid = ACPI_20_TABLE_GUID;
+
+    for (UINTN index = 0; index < SystemTable->NumberOfTableEntries; index++) {
+        if (CompareGuid(&config_table[index].VendorGuid, &acpi2_table_guid)) {
+            if (strncmp((CHAR8*)"RSD PTR ", (CHAR8*)config_table->VendorTable, 8) == 0) {
+                rsdp = (void*)config_table->VendorTable;
+            }
+        }
+        config_table++;
+    }
+
+    if (rsdp == NULL) {
+        fail_load(L"An RSDP version 2 was not found!\n");
+    }
+
+    void (*mmk_entry)(FRAMEBUFFER*, PSF_FONT*, EFI_MEMORY_MAP_INFO, void*) = ((__attribute__((sysv_abi)) void (*)(FRAMEBUFFER*, PSF_FONT*, EFI_MEMORY_MAP_INFO, void*) ) kernel_header.e_entry);
 
     Print(L"Exiting boot services...\n");
     uefi_call_wrapper(SystemTable->BootServices->ExitBootServices, 2, ImageHandle, memory_map_key);
 
     Print(L"Transferring control to kernel...\n");
     Print(L"Goodbye! (hopefully)\n");
-    mmk_entry(framebuffer, font, memory_map_info);
+    mmk_entry(framebuffer, font, memory_map_info, rsdp);
     while(1);
 
     return EFI_SUCCESS;

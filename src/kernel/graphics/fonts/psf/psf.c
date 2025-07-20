@@ -32,10 +32,10 @@ void fb_psf_draw_string(FRAMEBUFFER* framebuffer, PSF_FONT* font, char* string, 
     int cursor_x = x;
     int cursor_y = y;
     for (int i = 0; i < strlen(string); i++) {
-        if (string[i] == '\n') {
+        if (string[i] == '\n' || cursor_x > framebuffer->width - font->header->width) {
             cursor_x = x;
             cursor_y += font->header->height;
-            continue;
+            if (string[i] == '\n') continue;
         }
         fb_psf_draw_character(framebuffer, font, string[i], cursor_x, cursor_y, foreground, background);
         cursor_x += font->header->width;

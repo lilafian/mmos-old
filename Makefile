@@ -89,8 +89,24 @@ copy-ovmf:
 
 qemurun:
 	qemu-system-x86_64 \
-		-drive file=$(BUILD_DIR)/$(BUILD_BIMAGE_NAME) \
+		-drive file=$(BUILD_DIR)/$(BUILD_BIMAGE_NAME),if=none,id=drive0 \
+		-device ahci,id=ahci0 \
+		-device ide-hd,drive=drive0,bus=ahci0.0 \
 		-m 256M \
+		-machine q35 \
+		-cpu qemu64 \
+		-drive if=pflash,format=raw,unit=0,file="$(OVMF_SYSTEM_DIR)/$(OVMF_CODE)",readonly=on \
+		-drive if=pflash,format=raw,unit=1,file="$(OVMF_LOCAL_DIR)/$(OVMF_VARS)" \
+		-net none
+
+qemurun-gdb:
+	qemu-system-x86_64 \
+		-s -S \
+		-drive file=$(BUILD_DIR)/$(BUILD_BIMAGE_NAME),if=none,id=drive0 \
+		-device ahci,id=ahci0 \
+		-device ide-hd,drive=drive0,bus=ahci0.0 \
+		-m 256M \
+		-machine q35 \
 		-cpu qemu64 \
 		-drive if=pflash,format=raw,unit=0,file="$(OVMF_SYSTEM_DIR)/$(OVMF_CODE)",readonly=on \
 		-drive if=pflash,format=raw,unit=1,file="$(OVMF_LOCAL_DIR)/$(OVMF_VARS)" \

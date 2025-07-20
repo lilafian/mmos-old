@@ -14,6 +14,8 @@
 #include "memory/paging/page_frame_allocator/allocator.h"
 #include "memory/paging/paging.h"
 #include "memory/paging/table_manager/pt_manager.h"
+#include "devices/acpi/acpi.h"
+#include "devices/pci/pci.h"
 
 void halt() {
     while(1) {
@@ -24,7 +26,7 @@ void halt() {
 extern uint64_t _MMK_START_ADDRESS;
 extern uint64_t _MMK_END_ADDRESS;
 
-void mmk_entry(FRAMEBUFFER* framebuffer, PSF_FONT* font, EFI_MEMORY_MAP_INFO memory_map_info) {
+void mmk_entry(FRAMEBUFFER* framebuffer, PSF_FONT* font, EFI_MEMORY_MAP_INFO memory_map_info, RSDP2* rsdp) {
     fb_clear(framebuffer, 0x00000000);
     
     BASIC_OUTPUT_CONSOLE con;
@@ -73,6 +75,20 @@ void mmk_entry(FRAMEBUFFER* framebuffer, PSF_FONT* font, EFI_MEMORY_MAP_INFO mem
     klogf("Loading new page tables...\n");
     asm ("mov %0, %%cr3" :: "r" (pml4));
     klogf("Page tables loaded!\n");
+
+    if (rsdp->revision != 2) {
+        klogf("RSDP is the wrong revision! Expected 2, got %d", rsdp->revision);
+        halt();
+    }
+
+    SDT_HEADER* xsdt = (SDT_HEADER*)(rsdp->xsdt_address);
+    MCFG_HEADER* mcfg = (MCFG_HEADER*)acpi_find_table(xsdt, (char*)"MCFG");
+    if (mcfg == NULL) {
+        klog("No MCFG found on system!\n");
+        halt();
+    }
+
+    pci_enumerate(mcfg);
 
     halt();
 }
