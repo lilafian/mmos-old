@@ -41,7 +41,7 @@ void klogf(char* fmt, ...) {
                     break;
                 }
                 case 'c': { // character
-                    char character = va_arg(args, char);
+                    char character = (char)va_arg(args, int);
                     strchrcat(buffer, character);
                     break;
                 }
